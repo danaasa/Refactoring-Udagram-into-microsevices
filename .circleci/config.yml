@@ -1,37 +1,17 @@
 # This config is equivalent to both the '.circleci/extended/orb-free.yml' and the base '.circleci/config.yml'
 version: 2.1
 
-docker-build-master:
- 
-  image: docker:latest
-  stage: build
-  services:
-    - docker:dind
-  before_script:
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+# Orbs are reusable packages of CircleCI configuration that you may share across projects, enabling you to create encapsulated, parameterized commands, jobs, and executors that can be used across multiple projects.
+# See: https://circleci.com/docs/2.0/orb-intro/
+orbs:
+  node: circleci/node@4.7
 
-# Do similar for other three images
-
-    - docker build -t udagram-api-feed ./udagram-api-feed
-    - docker tag udagram-api-feed danaasa/udagram-api-feed:latest
-    - docker push docker.io/danaasa/udagram-api-feed
-
-    - docker build -t udagram-api-user ./udagram-api-user
-    - docker tag udagram-api-user danaasa/udagram-api-user:latest
-    - docker push docker.io/danaasa/udagram-api-user
-
-    - docker build -t udagram-frontend ./udagram-frontend
-    - docker tag udagram-frontend /udagram-frontend:latest
-    - docker push docker.io/danaasa/udagram-frontend
-
-    - docker build -t udagram-reverseproxy ./udagram-reverseproxy
-    - docker tag udagram-reverseproxy danaasa/reverseproxy:latest
-    - docker push docker.io/danaasa/reverseproxy
-  
-
-  only:
-    - main
-
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+  sample: # This is the name of the workflow, feel free to change it to better match your workflow.
+    # Inside the workflow, you define the jobs you want to run.
+jobs:
 docker-build:
  
   image: docker:latest
@@ -39,7 +19,7 @@ docker-build:
   services:
     - docker:dind
   before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
   script:
     - docker build -t udagram-api-feed ./udagram-api-feed
@@ -60,3 +40,10 @@ docker-build:
 
   except:
     - main
+      - node/test:
+          # This is the node version to use for the `cimg/node` tag
+          # Relevant tags can be found on the CircleCI Developer Hub
+          # https://circleci.com/developer/images/image/cimg/node
+          version: '16.10'
+          # If you are using yarn, change the line below from "npm" to "yarn"
+          pkg-manager: npm
